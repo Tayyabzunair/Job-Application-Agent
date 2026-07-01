@@ -42,3 +42,20 @@ class TailoredContent(BaseModel):
     keywords_used: List[str] = Field(
         description="JD keywords that were naturally incorporated into the content"
     )
+class CriticReview(BaseModel):
+    """Output of the Critic Agent: fact-checks the tailored content."""
+    is_truthful: bool = Field(
+        description="True if all claims are grounded in the resume, False if any fabrication is found"
+    )
+    fabricated_claims: List[str] = Field(
+        description="Specific claims that are NOT supported by the candidate's resume (empty if none)"
+    )
+    exaggerations: List[str] = Field(
+        description="Claims that overstate the candidate's actual experience (empty if none)"
+    )
+    verdict: str = Field(
+        description="Short overall assessment: APPROVED, NEEDS_REVISION, or REJECTED"
+    )
+    feedback: str = Field(
+        description="Brief explanation of the review findings"
+    )
