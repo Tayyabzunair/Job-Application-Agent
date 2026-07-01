@@ -28,3 +28,17 @@ class GapAnalysis(BaseModel):
     recommendation: str = Field(
         description="Short advice on how to strengthen the application for this JD"
     )
+class TailoredContent(BaseModel):
+    """Output of the Tailoring Agent: JD-optimized resume bullets + cover letter."""
+    tailored_bullets: List[str] = Field(
+        description="Resume bullet points rewritten to match the JD, using its keywords naturally"
+    )
+    professional_summary: str = Field(
+        description="A 2-3 sentence professional summary tailored to this specific job"
+    )
+    cover_letter: str = Field(
+        description="A personalized cover letter for this specific job"
+    )
+    keywords_used: List[str] = Field(
+        description="JD keywords that were naturally incorporated into the content"
+    )
