@@ -59,6 +59,33 @@ def keyword_coverage(text: str, keywords: list[str]) -> tuple[float, list[str], 
 
 def compare_ats(jd: JDAnalysis, original_resume: str, tailored: TailoredContent) -> dict:
     """
+    Measures how well the TAILORED content covers the JD keywords.
+    Also reports which keywords the tailored content added emphasis on
+    compared to a fair baseline (the resume's summary-level presence).
+    """
+    # All important keywords the ATS would scan for
+    keywords = list(set(jd.key_ats_keywords + jd.must_have_skills))
+
+    # Combine tailored content into one text block
+    tailored_text = " ".join(tailored.tailored_bullets) + " " \
+        + tailored.professional_summary + " " + tailored.cover_letter
+
+    # Coverage of the tailored content (this is the main metric)
+    tailored_score, tailored_matched, tailored_missing = keyword_coverage(
+        tailored_text, keywords
+    )
+
+    # Coverage of the original full resume (context, not a fair 1:1 compare)
+    resume_score, _, _ = keyword_coverage(original_resume, keywords)
+
+    return {
+        "tailored_score": tailored_score,       # main metric: JD-fit of tailored content
+        "resume_score": resume_score,           # context: keywords present in full resume
+        "matched": tailored_matched,
+        "still_missing": tailored_missing,
+        "total_keywords": len(keywords),
+    }
+    """
     Compares ATS keyword coverage of the original resume vs the tailored content.
     Returns a dict with before/after scores and details.
     """
