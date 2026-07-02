@@ -72,12 +72,3 @@ class AgentState(TypedDict):
     review: Optional[CriticReview]        # output of Critic Agent
     ats: Optional[dict]                   # output of ATS Scorer
     retry_count: int                      # how many times we retried tailoring
-class AgentState(TypedDict):
-    """Shared state passed between all nodes in the LangGraph."""
-    jd_text: str                          # raw job description input
-    jd: Optional[JDAnalysis]              # output of JD Analyzer
-    gap: Optional[GapAnalysis]            # output of Gap Analyzer
-    tailored: Optional[TailoredContent]   # output of Tailoring Agent
-    review: Optional[CriticReview]        # output of Critic Agent
-    ats: Optional[dict]                   # output of ATS Scorer
-    retry_count: int                      # how many times we retried tailoring
