@@ -32,15 +32,23 @@ def node_gap_analyzer(state: AgentState) -> dict:
 
 def node_tailoring(state: AgentState) -> dict:
     print("  [Node] Tailoring Agent running...")
-    tailored = tailor_application(state["jd"], state["gap"])
-    # increment retry counter each time we tailor
+    # Pass any critic feedback from a previous attempt
+    feedback = state.get("critic_feedback", "") or ""
+    tailored = tailor_application(state["jd"], state["gap"], feedback=feedback)
     return {"tailored": tailored, "retry_count": state.get("retry_count", 0) + 1}
 
 
 def node_critic(state: AgentState) -> dict:
     print("  [Node] Critic Agent reviewing...")
     review = review_content(state["tailored"])
-    return {"review": review}
+
+    # Build a feedback string for the tailoring agent if issues were found
+    feedback = ""
+    if not review.is_truthful:
+        problems = review.fabricated_claims + review.exaggerations
+        feedback = "Remove or fix these unsupported claims: " + "; ".join(problems)
+
+    return {"review": review, "critic_feedback": feedback}
 
 
 def node_ats(state: AgentState) -> dict:
