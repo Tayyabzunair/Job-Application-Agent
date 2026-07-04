@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from src.tools.tracker import log_application, get_all_applications
 from src.graph import app_graph
+from src.tools.job_fetcher import fetch_jobs
 
 app = FastAPI(title="Job Application Agent API")
 
@@ -99,3 +100,21 @@ def list_results():
 def applications():
     """Returns all approved/tracked applications from the tracker."""
     return get_all_applications()
+@app.get("/jobs")
+def jobs(search: str = "ai engineer", limit: int = 5):
+    """
+    Fetches live remote jobs from RemoteOK.
+    Example: /jobs?search=machine learning&limit=5
+    """
+    return fetch_jobs(search=search, limit=limit)
+class AnalyzeJobRequest(BaseModel):
+    job_description: str
+
+
+@app.post("/analyze-job")
+def analyze_job(req: AnalyzeJobRequest):
+    """
+    Convenience endpoint: analyze a fetched job's description directly.
+    (Same as /analyze but named for the job-fetch flow.)
+    """
+    return analyze(AnalyzeRequest(jd_text=req.job_description))

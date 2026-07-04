@@ -12,6 +12,7 @@ def review_content(tailored: TailoredContent) -> CriticReview:
     """
     Verifies that the tailored bullets, summary, and cover letter are fully
     grounded in the candidate's actual resume. Flags any fabrication.
+    Falls back to a safe default if the model returns malformed output.
     """
     llm = get_llm(temperature=0.0)  # zero temp for strict, consistent checking
     structured_llm = llm.with_structured_output(CriticReview, method="json_mode")
@@ -21,7 +22,6 @@ def review_content(tailored: TailoredContent) -> CriticReview:
     resume_chunks = retrieve_relevant(query, k=8)
     resume_context = "\n\n".join(resume_chunks)
 
-    # Combine all tailored content for review
     content_to_review = f"""
 BULLETS:
 {chr(10).join('- ' + b for b in tailored.tailored_bullets)}
@@ -34,20 +34,22 @@ COVER LETTER:
 """
 
     prompt = f"""You are a strict fact-checker and career ethics reviewer.
-Your job is to verify that the GENERATED CONTENT only makes claims that are
-truthfully supported by the CANDIDATE'S REAL RESUME.
+Verify that the GENERATED CONTENT only makes claims truthfully supported by
+the CANDIDATE'S REAL RESUME.
 
 CHECK FOR:
 - Fabricated claims: skills, projects, companies, or numbers NOT in the resume.
-- Exaggerations: overstating the candidate's actual level or scope of experience.
-- Any technology/tool mentioned as "used" that is not in the resume.
+- Exaggerations: overstating the candidate's actual level or scope.
 
-RULES:
-- Be strict but fair. Reasonable rephrasing of real experience is fine.
-- If the content is fully grounded, set is_truthful = true and verdict = "APPROVED".
-- If minor exaggerations exist, verdict = "NEEDS_REVISION".
-- If serious fabrications exist, verdict = "REJECTED".
-- Only list claims that are genuinely unsupported.
+STRICT OUTPUT RULES:
+- Return ONE single valid JSON object and NOTHING else.
+- Every list item must be a short plain string. No line breaks inside strings.
+- Do NOT split a field name and its value into separate list items.
+- 'verdict' must be exactly one of: "APPROVED", "NEEDS_REVISION", "REJECTED".
+- Keep 'feedback' to a single short sentence.
+- If fully grounded: is_truthful=true, verdict="APPROVED".
+- If minor issues: verdict="NEEDS_REVISION".
+- If serious fabrication: verdict="REJECTED".
 
 --- CANDIDATE'S REAL RESUME ---
 {resume_context}
@@ -55,15 +57,27 @@ RULES:
 --- GENERATED CONTENT TO REVIEW ---
 {content_to_review}
 
-Respond ONLY with a valid JSON object matching this structure:
+Respond ONLY with a valid JSON object exactly matching this structure:
 {{
   "is_truthful": true,
-  "fabricated_claims": [],
-  "exaggerations": [],
+  "fabricated_claims": ["claim one", "claim two"],
+  "exaggerations": ["exaggeration one"],
   "verdict": "APPROVED",
-  "feedback": "short explanation here"
+  "feedback": "one short sentence here"
 }}
 """
 
-    result = structured_llm.invoke(prompt)
-    return result
+    try:
+        result = structured_llm.invoke(prompt)
+        return result
+    except Exception as e:
+        # Safe fallback if the model returns malformed JSON.
+        # We default to NEEDS_REVISION so the graph can retry tailoring.
+        print(f"  [Critic] Parsing failed, using safe fallback. ({type(e).__name__})")
+        return CriticReview(
+            is_truthful=False,
+            fabricated_claims=[],
+            exaggerations=[],
+            verdict="NEEDS_REVISION",
+            feedback="Automated review could not be parsed; flagged for revision.",
+        )
