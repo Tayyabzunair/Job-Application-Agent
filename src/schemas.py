@@ -72,3 +72,4 @@ class AgentState(TypedDict):
     review: Optional[CriticReview]        # output of Critic Agent
     ats: Optional[dict]                   # output of ATS Scorer
     retry_count: int                      # how many times we retried tailoring
+    critic_feedback: Optional[str]   # feedback from critic for re-tailoring
