@@ -6,7 +6,7 @@ approve the tailored result (human-in-the-loop).
 import uuid
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-
+from src.tools.tracker import log_application, get_all_applications
 from src.graph import app_graph
 
 app = FastAPI(title="Job Application Agent API")
@@ -86,11 +86,16 @@ def approve(req: ApproveRequest):
 
     result["approved"] = True
 
-    # TODO: log to tracker (Supabase/Sheets) here in the next step
-    return {"message": "Approved and saved.", "result": result}
+     # Log the approved application to the tracker (persists to disk)
+    logged = log_application(result)
 
+    return {"message": "Approved and logged.", "logged": logged, "result": result}
 
 @app.get("/results")
 def list_results():
     """Returns all analyzed results (for a future dashboard)."""
     return list(RESULTS_STORE.values())
+@app.get("/applications")
+def applications():
+    """Returns all approved/tracked applications from the tracker."""
+    return get_all_applications()
