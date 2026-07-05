@@ -14,3 +14,10 @@ CHROMA_DIR = "chroma_db"
 
 if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY missing in .env file!")
+# Add to src/config.py
+MONGODB_URI = os.getenv("MONGODB_URI")
+DB_NAME = "job_agent_db"
+COLLECTION_NAME = "applications"
+
+if not MONGODB_URI:
+    raise ValueError("MONGODB_URI missing in .env file!")
