@@ -18,8 +18,8 @@ def review_content(tailored: TailoredContent) -> CriticReview:
     structured_llm = llm.with_structured_output(CriticReview, method="json_mode")
 
     # Pull a broad view of the candidate's real experience for verification
-    query = "all skills projects experience summary"
-    resume_chunks = retrieve_relevant(query, k=8)
+    query = "skills technologies frameworks projects experience certifications"
+    resume_chunks = retrieve_relevant(query, k=12)
     resume_context = "\n\n".join(resume_chunks)
 
     content_to_review = f"""
@@ -40,6 +40,15 @@ the CANDIDATE'S REAL RESUME.
 CHECK FOR:
 - Fabricated claims: skills, projects, companies, or numbers NOT in the resume.
 - Exaggerations: overstating the candidate's actual level or scope.
+
+DO NOT FLAG (these are always fine):
+- Any skill that appears ANYWHERE in the resume (including the Skills section).
+  Example: if "LangChain" is listed in skills, claiming LangChain experience is VALID.
+- The job title being applied for, or general statements of interest/enthusiasm.
+- Reasonable rephrasing or professional framing of real experience.
+- Standard cover-letter courtesy language.
+
+Only flag something if it is genuinely NOT supported anywhere in the resume.
 
 STRICT OUTPUT RULES:
 - Return ONE single valid JSON object and NOTHING else.

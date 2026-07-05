@@ -46,7 +46,13 @@ def node_critic(state: AgentState) -> dict:
     feedback = ""
     if not review.is_truthful:
         problems = review.fabricated_claims + review.exaggerations
-        feedback = "Remove or fix these unsupported claims: " + "; ".join(problems)
+        feedback = (
+            "Fix ONLY these specific unsupported claims: " + "; ".join(problems)
+            + ". Keep all other truthful content and keywords intact. "
+            "Do NOT remove real skills the candidate genuinely has "
+            "(e.g. Python, RAG, LangChain, FastAPI, ChromaDB) — only remove the exaggerations."
+        )
+
 
     return {"review": review, "critic_feedback": feedback}
 
